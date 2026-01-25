@@ -1,0 +1,128 @@
+
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script>
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kafedeki Tabak Olayları</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #fff4ed; 
+            padding: 40px;
+            color: #333;
+        }
+
+        h2 {
+            text-align: right;
+            margin-right: 40px;
+            font-size: 24px;
+            color: #444;
+        }
+
+        .masa-kutu {
+            background-color: #fff;
+            border: 2px solid #ff9966;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 40px;
+            width: fit-content;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            font-weight: bold;
+        }
+		
+		
+		
+
+        #btnSil {
+            display: block;
+            margin: 40px auto;
+            background-color: #ff9966;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+            font-weight: bold;
+        }
+
+        #btnSil:hover {
+            background-color: #ff8147;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>KAFE TABAK DURUM</h2>
+
+    <div id="masaAlani">
+        <div class="masa-kutu">masa 1 (tabak duruyor)</div>
+		
+        <div class="masa-kutu">masa 2 (tabak var)</div>
+		
+        <div class="masa-kutu">masa 3 (kirli tabak)</div>
+    </div>
+
+    <button id="btnSil">müşteri kalktı, tabağı al!</button>
+
+</body>
+</html>
+
+<script>
+
+var buton = document.getElementById("btnSil")
+var masalar = document.getElementById("masaAlani")
+
+buton.addEventListener("click", function() {
+    var sonMasa = masalar.lastElementChild
+    if (sonMasa){
+        masalar.removeChild(sonMasa)
+    }
+})
+</script>
+
+</body>
+</html>
+
