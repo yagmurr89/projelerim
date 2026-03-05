@@ -1,0 +1,138 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script>
+		
+		<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Merhaba Dediğim Kadar</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #2C2C2C; 
+            color: white; 
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; 
+        }
+
+        #container {
+            background-color: #444; 
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%; 
+            max-width: 400px; 
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+            text-align: center; 
+        }
+
+        input, button {
+            padding: 12px;
+            margin-top: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        input {
+            background-color: #666; 
+            color: white;
+        }
+
+        button {
+            background-color: #00bcd4; 
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0097a7; 
+        }
+
+        #sonuc {
+            margin-top: 15px;
+            text-align: left;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+	
+	
+        <h2> Merhaba Dediğim Kadar</h2>
+        <label>Kaç kere "Merhaba" demek istersin?</label><br>
+		
+        <input type="number" id="tekrarSayisi" min="1"><br>
+        <button onclick="baslat()">Başla</button>
+        <div id="sonuc"></div>
+    </div>
+
+    <script>
+        function baslat() {
+            let sayi = parseInt(document.getElementById("tekrarSayisi").value);
+            let sonucDiv = document.getElementById("sonuc");
+            sonucDiv.innerHTML = "";
+
+            if (isNaN(sayi) || sayi <= 0) {
+                   sonucDiv.innerHTML = "<p>Lütfen geçerli bir sayı girin.</p>";
+                  return;
+            }
+
+            let i = 1;
+            do {
+                sonucDiv.innerHTML += `Merhaba!  <br>`;
+                i++;
+             } while (i <= sayi);
+        }
+    </script>
+</body>
+</html>
+
+				
+
+		
+	
