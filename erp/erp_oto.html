@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus Cloud | Enterprise Control</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #f8fafc; color: #1e293b; }
+        
+        .premium-card { background: white; border: 1px solid #e2e8f0; border-radius: 1.5rem; transition: all 0.3s ease; position: relative; overflow: hidden; }
+        .premium-card:hover { border-color: #3b82f6; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.1); }
+        
+        .active-module { display: block !important; animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Mini Grafik Efekti */
+        .bar-anim { animation: grow 1.5s ease-out forwards; transform-origin: bottom; }
+        @keyframes grow { from { transform: scaleY(0); } to { transform: scaleY(1); } }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <header class="bg-[#0f172a] text-white p-4 flex justify-between items-center shadow-2xl z-50">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 p-2 rounded-xl rotate-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+            </div>
+            <h1 class="text-xl font-black italic tracking-tighter">NEXUS <span class="text-blue-400 font-light text-[10px] uppercase tracking-[0.4em] ml-2 hidden md:inline">Management Suite</span></h1>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="hidden md:flex flex-col text-right mr-4 border-r border-slate-700 pr-4">
+                <span class="text-[9px] font-bold text-slate-400 uppercase">Sistem Durumu</span>
+                <span class="text-[10px] text-emerald-400 font-bold">● Sunucu Online</span>
+            </div>
+            <select id="tenantSwitcher" onchange="renderAll()" class="bg-[#1e293b] text-xs font-bold p-2.5 px-4 rounded-xl border-none outline-none ring-1 ring-slate-700 focus:ring-blue-500">
+                <option value="Global_Lojistik">Global Lojistik</option>
+                <option value="Tekno_Depo">Tekno Depo</option>
+            </select>
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-500 px-5 py-2.5 rounded-xl text-xs font-black transition-all active:scale-95 shadow-lg shadow-blue-500/20">RAPOR ÜRET</button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <aside class="w-64 bg-white border-r p-6 flex flex-col gap-2 hidden md:flex">
+            <nav class="space-y-1 mb-8">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-4 italic">Navigasyon</p>
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-bold text-blue-600 bg-blue-50 transition-all border-r-4 border-blue-600">📊 Dashboard</button>
+                <button onclick="switchTab('shipping')" id="tab-shipping" class="w-full flex items-center gap-3 p-4 rounded-2xl text-sm font-bold text-slate-500 hover:bg-slate-50 transition-all border-r-4 border-transparent">🚚 Sevkiyatlar</button>
+            </nav>
+
+            <div class="mt-auto p-5 bg-slate-900 rounded-[2rem] text-white">
+                <div class="flex justify-between items-end h-12 gap-1 mb-4">
+                    <div class="w-full bg-blue-500/30 h-1/2 rounded-t bar-anim"></div>
+                    <div class="w-full bg-blue-500/50 h-3/4 rounded-t bar-anim"></div>
+                    <div class="w-full bg-blue-500 h-full rounded-t bar-anim"></div>
+                    <div class="w-full bg-blue-500/70 h-2/3 rounded-t bar-anim"></div>
+                </div>
+                <p class="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Haftalık Trafik</p>
+                <p class="text-[9px] mt-1 text-slate-400">Verimlilik %14 arttı.</p>
+            </div>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-6 md:p-10 space-y-8">
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="premium-card p-6 border-b-4 border-b-blue-500">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Toplam Envanter</p>
+                    <p id="totalCountDisplay" class="text-4xl font-black mt-1">0</p>
+                </div>
+                <div class="premium-card p-6 border-b-4 border-b-amber-500">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Bekleyen Sevkiyat</p>
+                    <p id="shipCountDisplay" class="text-4xl font-black mt-1">0</p>
+                </div>
+                <div class="premium-card p-6 border-b-4 border-b-emerald-500">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Aktif Müşteri</p>
+                    <p id="displayTenant" class="text-xl font-black mt-1 text-emerald-600 italic">Global Lojistik</p>
+                </div>
+                <div class="premium-card p-6 border-b-4 border-b-purple-500">
+                    <p class="text-[10px] font-black text-slate-400 uppercase">Sistem Yükü</p>
+                    <p class="text-xl font-black mt-1">CPU: %2.4</p>
+                </div>
+            </div>
+
+            <div id="view-dashboard" class="module-content active-module">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-4 space-y-6">
+                        <div class="premium-card p-8">
+                            <h3 class="font-bold text-sm mb-6 flex items-center justify-between uppercase tracking-tighter">
+                                Ürün Giriş Terminali <span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                            </h3>
+                            <form id="invForm" class="space-y-4">
+                                <input type="text" id="pName" placeholder="Ürün Tanımı" class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <input type="number" id="pQty" placeholder="Adet" class="p-4 bg-slate-50 border rounded-2xl text-sm" required>
+                                    <input type="text" id="pLoc" placeholder="Raf" class="p-4 bg-slate-50 border rounded-2xl text-sm uppercase" required>
+                                </div>
+                                <button class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-[#0f172a] transition-all">Sisteme İşle</button>
+                            </form>
+                        </div>
+                        <div class="premium-card p-6 bg-blue-600 text-white">
+                            <p class="text-[10px] font-bold uppercase opacity-80 italic">Nexus AI Notu</p>
+                            <p class="text-xs mt-2 leading-relaxed">Depo doluluk oranınız şu an **%34**. A-04 rafında yer açmanız önerilir.</p>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-8 premium-card">
+                        <div class="p-6 border-b flex justify-between items-center bg-slate-50/50">
+                            <h3 class="font-bold text-xs uppercase text-slate-500 tracking-widest">Envanter Veri Seti</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <tr><th class="p-6">Tanım</th><th class="p-6">Konum</th><th class="p-6">Miktar</th><th class="p-6"></th></tr>
+                                </thead>
+                                <tbody id="invTable" class="divide-y divide-slate-100 italic"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-shipping" class="module-content hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-4 premium-card p-8">
+                        <h3 class="font-bold text-sm mb-6 uppercase">Sevkiyat Emri Oluştur</h3>
+                        <form id="shipForm" class="space-y-4">
+                            <input type="text" id="sTarget" placeholder="Varış Noktası" class="w-full p-4 bg-slate-50 border rounded-2xl text-sm" required>
+                            <input type="text" id="sCarrier" placeholder="Lojistik Sağlayıcı" class="w-full p-4 bg-slate-50 border rounded-2xl text-sm" required>
+                            <button class="w-full py-4 bg-amber-600 text-white rounded-2xl font-black text-[10px] uppercase hover:bg-amber-700 transition-all">Sevkiyatı Onayla</button>
+                        </form>
+                    </div>
+                    <div class="lg:col-span-8 space-y-4" id="shipTable">
+                        </div>
+                </div>
+            </div>
+
+            <div class="premium-card p-6 bg-[#0f172a] text-slate-400 font-mono text-[9px] uppercase tracking-widest">
+                <div class="flex gap-4">
+                    <span class="text-blue-500">[LOG]</span>
+                    <span id="sysTime">Sistem Başlatıldı: 22:19:48</span>
+                    <span class="text-emerald-500">● VERİ TABANI BAĞLANDI</span>
+                    <span class="hidden md:inline ml-auto">Versiyon: 5.0.2-Enterprise</span>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        let db = JSON.parse(localStorage.getItem('nexus_ent_v5')) || {
+            "Global_Lojistik": { inventory: [{name: "Optik Sensör Pro", qty: 45, loc: "R-12"}], shipping: [] },
+            "Tekno_Depo": { inventory: [], shipping: [] }
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.module-content').forEach(v => v.classList.add('hidden'), v => v.classList.remove('active-module'));
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('view-' + tabId).classList.add('active-module');
+            
+            // Sidebar görsel güncelleme
+            document.querySelectorAll('.nav-link').forEach(btn => btn.classList.remove('bg-blue-50', 'text-blue-600', 'border-blue-600'));
+            // (Basitlik için JS ile stil ekleme yerine classList manipülasyonu yapılabilir)
+            renderAll();
+        }
+
+        function renderAll() {
+            const t = document.getElementById('tenantSwitcher').value;
+            const inv = db[t].inventory;
+            const ship = db[t].shipping;
+
+            document.getElementById('displayTenant').innerText = t.replace('_', ' ');
+            document.getElementById('totalCountDisplay').innerText = inv.length;
+            document.getElementById('shipCountDisplay').innerText = ship.length;
+
+            const table = document.getElementById('invTable');
+            table.innerHTML = '';
+            inv.forEach((item, i) => {
+                table.innerHTML += `<tr class="hover:bg-blue-50/50 transition">
+                    <td class="p-6 font-bold text-slate-800">${item.name}</td>
+                    <td class="p-6 font-mono text-xs text-blue-500 font-bold">${item.loc}</td>
+                    <td class="p-6 font-black text-lg text-slate-800">${item.qty}</td>
+                    <td class="p-6 text-right"><button onclick="removeItem('inventory', ${i})" class="text-red-300 hover:text-red-500">×</button></td>
+                </tr>`;
+            });
+
+            const shipTable = document.getElementById('shipTable');
+            shipTable.innerHTML = ship.length ? '' : '<div class="premium-card p-12 text-center text-slate-300 uppercase font-black text-[10px] tracking-[0.4em]">Bekleyen Sevkiyat Verisi Bulunamadı</div>';
+            ship.forEach((s, i) => {
+                shipTable.innerHTML += `<div class="premium-card p-6 flex justify-between items-center border-l-4 border-l-amber-500">
+                    <div class="flex items-center gap-4">
+                        <div class="bg-amber-100 p-3 rounded-xl text-xl">🚚</div>
+                        <div><p class="font-bold text-slate-800">${s.target}</p><p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">${s.carrier} | STATUS: TRANSIT</p></div>
+                    </div>
+                    <button onclick="removeItem('shipping', ${i})" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-black hover:bg-amber-600 transition">TESLİM ONAYLA</button>
+                </div>`;
+            });
+
+            localStorage.setItem('nexus_ent_v5', JSON.stringify(db));
+        }
+
+        document.getElementById('invForm').onsubmit = (e) => {
+            e.preventDefault();
+            const t = document.getElementById('tenantSwitcher').value;
+            db[t].inventory.push({ name: document.getElementById('pName').value, qty: document.getElementById('pQty').value, loc: document.getElementById('pLoc').value });
+            e.target.reset(); renderAll();
+        };
+
+        document.getElementById('shipForm').onsubmit = (e) => {
+            e.preventDefault();
+            const t = document.getElementById('tenantSwitcher').value;
+            db[t].shipping.push({ target: document.getElementById('sTarget').value, carrier: document.getElementById('sCarrier').value });
+            e.target.reset(); renderAll();
+        };
+
+        function removeItem(type, i) {
+            const t = document.getElementById('tenantSwitcher').value;
+            db[t][type].splice(i, 1);
+            renderAll();
+        }
+
+        setInterval(() => {
+            const now = new Date().toLocaleTimeString('tr-TR');
+            document.getElementById('sysTime').innerText = "SİSTEM TARAMA: " + now;
+        }, 1000);
+
+        window.onload = renderAll;
+    </script>
+</body>
+</html>
